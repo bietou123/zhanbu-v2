@@ -1,0 +1,23 @@
+# ===== Web 框架 =====
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# ===== 玄学算法核心 =====
+# lunar-python: 公历/农历/干支/节气/纳音/神煞，权威万年历库
+lunar-python==1.4.4
+# ephem: XEphem-based 天文计算，覆盖七政四余 + 行星黄经/纬，免编译
+ephem==4.2.1
+# 时区与真太阳时辅助
+pytz==2024.2
+tzdata==2024.2
+
+# ===== 工具 =====
+python-multipart==0.0.12
+httpx==0.27.2
+sqlmodel==0.0.22
+
+# ===== 测试 =====
+pytest==8.3.3
+pytest-asyncio==0.24.0
