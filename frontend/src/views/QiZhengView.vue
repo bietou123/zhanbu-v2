@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BirthInputForm from '@/components/BirthInputForm.vue'
+import AnalysisPanel from '@/components/AnalysisPanel.vue'
 import { qizhengAPI, type BirthInput } from '@/api/client'
 
 const loading = ref(false)
@@ -134,6 +135,9 @@ function bodySymbol(name: string) {
       </div>
 
       <div class="text-[10px] text-ink-500 italic">{{ data.note }}</div>
+
+      <AnalysisPanel v-if="data.analysis" title="七政四余解读"
+                     :analysis="data.analysis" accent="cyber" />
     </template>
 
     <div v-else class="glass p-12 text-center">

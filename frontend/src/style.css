@@ -7,76 +7,195 @@
     @apply h-full;
   }
   body {
-    @apply bg-ink-900 text-slate-100 font-sans antialiased;
+    @apply bg-ink-950 text-slate-100 font-sans antialiased;
     background-image:
-      radial-gradient(at 12% 8%, rgba(224, 123, 60, 0.10) 0px, transparent 40%),
-      radial-gradient(at 92% 88%, rgba(125, 211, 168, 0.06) 0px, transparent 40%),
-      radial-gradient(at 50% 50%, rgba(212, 176, 97, 0.05) 0px, transparent 60%);
+      radial-gradient(at 8% 8%, rgba(34, 211, 238, 0.08) 0px, transparent 38%),
+      radial-gradient(at 92% 12%, rgba(224, 123, 60, 0.10) 0px, transparent 42%),
+      radial-gradient(at 50% 92%, rgba(167, 139, 250, 0.08) 0px, transparent 45%),
+      radial-gradient(at 50% 50%, rgba(212, 176, 97, 0.04) 0px, transparent 60%);
     background-attachment: fixed;
+    position: relative;
+    overflow-x: hidden;
   }
+
+  /* 星空粒子背景 (纯 CSS) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 80px 70px, rgba(34,211,238,0.5), transparent),
+      radial-gradient(1px 1px at 130px 130px, rgba(212,176,97,0.4), transparent),
+      radial-gradient(1px 1px at 200px 50px, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 260px 170px, rgba(167,139,250,0.4), transparent),
+      radial-gradient(1px 1px at 320px 90px, rgba(34,211,238,0.4), transparent),
+      radial-gradient(1px 1px at 380px 220px, rgba(255,255,255,0.4), transparent);
+    background-size: 400px 250px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 主格栅扫描线 (subtle) */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(rgba(34, 211, 238, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 211, 238, 0.025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; }
+
   ::selection {
-    @apply bg-ember-500/40 text-white;
+    @apply bg-cyber-500/40 text-white;
   }
 }
 
 @layer components {
-  /* 磨砂玻璃卡片 */
+  /* === 磨砂玻璃卡片 === */
   .glass {
-    @apply bg-ink-700/60 backdrop-blur-md border border-ink-600/60 rounded-2xl shadow-glass;
+    @apply relative bg-ink-800/55 backdrop-blur-xl
+           border border-ink-600/60 rounded-2xl shadow-glass;
+    background-image: linear-gradient(135deg, rgba(34,211,238,0.03), rgba(224,123,60,0.03));
   }
   .glass-hover {
-    @apply transition-all duration-300 hover:border-ember-500/50 hover:shadow-glow-ember;
+    @apply transition-all duration-300
+           hover:border-cyber-400/50 hover:shadow-glow-cyber;
+  }
+  /* 动画渐变边框 (高科技感) */
+  .glass-neon {
+    position: relative;
+  }
+  .glass-neon::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 1rem;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      rgba(34, 211, 238, 0.6),
+      rgba(167, 139, 250, 0.4),
+      rgba(224, 123, 60, 0.6),
+      rgba(212, 176, 97, 0.5));
+    background-size: 300% 300%;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: shimmer 4s linear infinite;
+    pointer-events: none;
   }
 
-  /* 国潮按钮 */
+  /* === 按钮 === */
   .btn-primary {
-    @apply px-5 py-2.5 rounded-xl font-medium
-           bg-gradient-to-br from-ember-500 to-ember-700
+    @apply relative px-5 py-2.5 rounded-xl font-medium
            text-white shadow-glow-ember
            transition-all duration-200
-           hover:scale-[1.02] hover:shadow-lg
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+           hover:scale-[1.02] hover:shadow-glow-cyber
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+           overflow-hidden;
+    background: linear-gradient(135deg, #c45828 0%, #e07b3c 40%, #0891b2 100%);
+    background-size: 200% 200%;
+    animation: shimmer 6s ease infinite;
   }
   .btn-ghost {
     @apply px-4 py-2 rounded-xl text-slate-300
            border border-ink-600/60 bg-ink-700/30
-           hover:bg-ink-700/60 hover:text-white transition;
-  }
-
-  /* 输入控件 */
-  .input-base {
-    @apply w-full px-4 py-2.5 rounded-xl bg-ink-900/60
-           border border-ink-600 text-slate-100
-           placeholder:text-ink-500
-           focus:outline-none focus:ring-2 focus:ring-ember-500/40 focus:border-ember-500/60
+           hover:bg-cyber-500/10 hover:border-cyber-400/50 hover:text-cyber-300
            transition;
   }
 
-  /* 章节标题 */
+  /* === 输入控件 === */
+  .input-base {
+    @apply w-full px-4 py-2.5 rounded-xl bg-ink-900/70
+           border border-ink-600 text-slate-100
+           placeholder:text-ink-500
+           focus:outline-none focus:ring-2 focus:ring-cyber-400/40 focus:border-cyber-400/60
+           transition;
+  }
+
+  /* === 文字标题 === */
   .title-zh {
-    @apply font-kai text-xl md:text-2xl text-ember-300/90 tracking-wider;
+    @apply font-kai text-xl md:text-2xl tracking-wider;
+    background: linear-gradient(90deg, #e07b3c, #d4b061, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .title-cyber {
+    @apply font-mono text-sm uppercase tracking-[0.3em] text-cyber-300;
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
   }
 
   /* 干支大字 */
   .ganzhi {
-    @apply font-kai text-2xl md:text-3xl text-gold-400 tracking-widest;
+    @apply font-kai text-2xl md:text-3xl tracking-widest;
+    background: linear-gradient(180deg, #f5a96a, #d4b061);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 6px rgba(224, 123, 60, 0.4));
   }
 
-  /* 印章圆点 */
+  /* 印章 */
   .seal {
     @apply inline-flex items-center justify-center w-7 h-7 rounded-md
            bg-gradient-to-br from-ember-500 to-ember-700 text-white text-xs font-bold
            shadow-glow-ember;
   }
+  .seal-cyber {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded-md
+           bg-gradient-to-br from-cyber-500 to-mystic-600 text-white text-xs font-bold
+           shadow-glow-cyber;
+  }
+
+  /* 高科技 chip */
+  .chip {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono
+           bg-cyber-500/10 border border-cyber-400/30 text-cyber-300;
+  }
+  .chip-ember {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono
+           bg-ember-500/10 border border-ember-500/30 text-ember-300;
+  }
+  .chip-mystic {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono
+           bg-mystic-500/10 border border-mystic-400/30 text-mystic-400;
+  }
+
+  /* 分析卡片 */
+  .analysis-card {
+    @apply glass p-4 md:p-5 space-y-2 animate-fade-up;
+  }
+  .analysis-card .label {
+    @apply text-[10px] font-mono uppercase tracking-widest text-cyber-300/80;
+  }
+
+  /* 数据条 */
+  .data-bar {
+    @apply relative h-1.5 rounded-full bg-ink-700 overflow-hidden;
+  }
+  .data-bar > .fill {
+    @apply absolute inset-y-0 left-0 rounded-full;
+    background: linear-gradient(90deg, #22d3ee, #e07b3c);
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  }
 }
 
 /* 滚动条 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-track { background: rgba(10,14,22,0.4); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(224, 123, 60, 0.3);
+  background: linear-gradient(180deg, rgba(34,211,238,0.4), rgba(224,123,60,0.3));
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(224, 123, 60, 0.55);
+  background: linear-gradient(180deg, rgba(34,211,238,0.7), rgba(224,123,60,0.5));
 }

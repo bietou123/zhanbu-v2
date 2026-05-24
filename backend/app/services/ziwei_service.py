@@ -22,6 +22,7 @@ from typing import Any
 from lunar_python import Solar
 
 from app.utils.calendar_core import CalendarCore
+from app.services.analysis import ziwei_analysis
 
 
 DI_ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
@@ -227,7 +228,7 @@ class ZiWeiService:
                 "stars": palace_stars_with_hua,
             })
 
-        return {
+        result = {
             "context": ctx,
             "lunar": {
                 "year_ganzhi": year_ganzhi,
@@ -248,3 +249,5 @@ class ZiWeiService:
             "palaces": palaces,
             "note": "基础版：14 主星 + 四化 + 十二宫；辅/煞星后续 milestone 增补。",
         }
+        result["analysis"] = ziwei_analysis.analyze(result)
+        return result

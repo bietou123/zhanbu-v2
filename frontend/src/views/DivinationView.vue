@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import AnalysisPanel from '@/components/AnalysisPanel.vue'
 import { divinationAPI } from '@/api/client'
 
 const mode = ref<'coin' | 'numbers'>('coin')
@@ -104,6 +105,9 @@ function yaoLine(v: number, moving: boolean) {
           <div class="text-xs text-slate-400">{{ g.judgement }}</div>
         </div>
       </div>
+
+      <AnalysisPanel v-if="result.analysis" title="占卜解读"
+                     :analysis="result.analysis" accent="ember" />
     </template>
 
     <div v-else-if="!error" class="glass p-12 text-center">

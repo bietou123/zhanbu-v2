@@ -21,6 +21,7 @@ from app.utils.hexagrams import (
     Hexagram, hexagram_from_yao, TRIGRAMS, BIN_TO_TRIGRAM,
     hu_gua, cuo_gua, zong_gua, bian_gua,
 )
+from app.services.analysis import divination_analysis
 
 
 # 八卦序（先天/后天混用，此处用文王后天：乾兑离震巽坎艮坤）
@@ -95,7 +96,7 @@ class DivinationService:
         zong = zong_gua(ben)
         bian = bian_gua(ben, moving) if moving else ben
 
-        return {
+        result = {
             "method": method,
             "extra": extra or {},
             "moving_yao_indexes_bottom_up": moving,
@@ -105,3 +106,5 @@ class DivinationService:
             "cuo_gua": cuo.to_dict(),
             "zong_gua": zong.to_dict(),
         }
+        result["analysis"] = divination_analysis.analyze(result)
+        return result

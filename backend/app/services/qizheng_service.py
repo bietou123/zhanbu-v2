@@ -15,6 +15,7 @@ from typing import Any
 import ephem
 
 from app.utils.calendar_core import CalendarCore
+from app.services.analysis import qizheng_analysis
 
 
 ZODIAC_12 = [
@@ -173,7 +174,7 @@ class QiZhengService:
                     "note": "近似实现：木星+180°（古制取木星交点 28 年周期）"},
         }
 
-        return {
+        result = {
             "context": ctx,
             "julian_day_ut": jd,
             "seven_zheng": seven_zheng,
@@ -183,3 +184,5 @@ class QiZhengService:
                 "月交点 / 月孛使用 Meeus 平根公式；二十八宿采用简化等分。"
             ),
         }
+        result["analysis"] = qizheng_analysis.analyze(result)
+        return result

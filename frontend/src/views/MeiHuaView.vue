@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BirthInputForm from '@/components/BirthInputForm.vue'
+import AnalysisPanel from '@/components/AnalysisPanel.vue'
 import { meihuaAPI, type BirthInput } from '@/api/client'
 
 type Mode = 'time' | 'chars' | 'numbers'
@@ -124,6 +125,9 @@ const relationColor = (rel: string) => {
           <div class="text-xs text-slate-300 mt-2 leading-relaxed">{{ g.judgement }}</div>
         </div>
       </div>
+
+      <AnalysisPanel v-if="result.analysis" title="梅花解读"
+                     :analysis="result.analysis" accent="cyber" />
     </template>
 
     <div v-else-if="!error && mode !== 'time'" class="glass p-12 text-center">

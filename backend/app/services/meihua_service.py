@@ -19,6 +19,7 @@ from app.utils.calendar_core import CalendarCore
 from app.utils.hexagrams import (
     TRIGRAMS, hexagram_from_yao, hu_gua, bian_gua,
 )
+from app.services.analysis import meihua_analysis
 
 
 BAGUA_ORDER = ["乾", "兑", "离", "震", "巽", "坎", "艮", "坤"]
@@ -78,6 +79,16 @@ def _assemble(upper_idx: int, lower_idx: int, moving_yao_idx: int,
             "yong": {"gua": yong, "wuxing": yong_wx},
             "relation": _relation(ti_wx, yong_wx),
         },
+        "analysis": meihua_analysis.analyze({
+            "ti_yong": {
+                "ti": {"gua": ti, "wuxing": ti_wx},
+                "yong": {"gua": yong, "wuxing": yong_wx},
+                "relation": _relation(ti_wx, yong_wx),
+            },
+            "ben_gua": ben.to_dict(),
+            "hu_gua": hu.to_dict(),
+            "bian_gua": bian.to_dict(),
+        }),
     }
 
 

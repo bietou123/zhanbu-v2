@@ -19,6 +19,7 @@ from typing import Any
 from lunar_python import Solar
 
 from app.utils.calendar_core import CalendarCore
+from app.services.analysis import liuren_analysis
 
 
 DI_ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
@@ -222,7 +223,7 @@ class LiuRenService:
         # 6. 十二贵神
         gui_shen = _gui_shen_pan(day_gan, tian_pan)
 
-        return {
+        result = {
             "context": ctx,
             "day_ganzhi": day_gz,
             "zhongqi": zhongqi,
@@ -234,3 +235,5 @@ class LiuRenService:
             "twelve_gui_shen": gui_shen,
             "note": "基础版：仅实现贼克法；比用/涉害/遥克等其余八宗门后续增补。",
         }
+        result["analysis"] = liuren_analysis.analyze(result)
+        return result

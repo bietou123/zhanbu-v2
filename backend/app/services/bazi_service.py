@@ -19,6 +19,7 @@ from typing import Any
 from lunar_python import Solar
 
 from app.utils.calendar_core import CalendarCore
+from app.services.analysis import bazi_analysis
 
 
 TIAN_GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
@@ -178,7 +179,7 @@ class BaZiService:
             "hour": ec.getTimeXunKong(),
         }
 
-        return {
+        result = {
             "context": ctx,
             "pillars": pillars,
             "day_master": {
@@ -208,3 +209,5 @@ class BaZiService:
             "liu_nian_next_10y": liu_nian_list,
             "shensha": shensha,
         }
+        result["analysis"] = bazi_analysis.analyze(result)
+        return result

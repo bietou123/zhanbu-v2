@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BirthInputForm from '@/components/BirthInputForm.vue'
+import AnalysisPanel from '@/components/AnalysisPanel.vue'
 import { liurenAPI, type BirthInput } from '@/api/client'
 
 type Mode = 'da' | 'xiao'
@@ -127,6 +128,9 @@ const guaColor: Record<string, string> = {
         </div>
       </div>
       <div class="text-[10px] text-ink-500 italic">{{ da.note }}</div>
+
+      <AnalysisPanel v-if="da.analysis" title="六壬解读"
+                     :analysis="da.analysis" accent="mystic" />
     </template>
 
     <div v-else class="glass p-12 text-center">
