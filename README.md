@@ -49,6 +49,18 @@ uvicorn app.main:app --reload --port 8000
 
 ---
 
+## 🚀 Docker 一键部署（飞牛 NAS / 任何 Linux）
+
+```bash
+git clone https://github.com/bietou123/zhanbu-v2.git
+cd zhanbu-v2
+docker compose up -d --build
+```
+
+访问 `http://<host>:8088` 即用。详见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+
+---
+
 ## 开发里程碑
 
 - [x] **M1**：基础设施 + 历法核心库（真太阳时、公农历、干支）

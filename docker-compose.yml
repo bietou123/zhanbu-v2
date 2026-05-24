@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: zhanbu-backend:latest
+    container_name: zhanbu-backend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      # SQLite 档案数据持久化（重启不丢）
+      - ./data/zhanbu-db:/app/data
+    networks:
+      - zhanbu-net
+    # 默认不对外开放 8000，前端容器内部访问；
+    # 如需直接调试 API 可取消下方注释
+    # ports:
+    #   - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: zhanbu-frontend:latest
+    container_name: zhanbu-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # 宿主机 (NAS) 的 8088 → 容器 80
+      # 在飞牛 NAS 上访问：http://<NAS-IP>:8088
+      - "8088:80"
+    networks:
+      - zhanbu-net
+    environment:
+      TZ: Asia/Shanghai
+
+networks:
+  zhanbu-net:
+    driver: bridge

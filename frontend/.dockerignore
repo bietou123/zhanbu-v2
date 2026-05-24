@@ -1,0 +1,10 @@
+node_modules
+dist
+.vite
+.cache
+.parcel-cache
+.next
+.nuxt
+.env
+.git
+*.log
