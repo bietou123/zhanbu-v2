@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 from app.core.config import settings
 from app.api.v1 import calendar as calendar_api
@@ -35,7 +38,7 @@ app.add_middleware(
 )
 
 
-@app.get("/", tags=["meta"])
+@app.get("/api/_meta", tags=["meta"])
 def root():
     return {
         "app": settings.APP_NAME,
@@ -65,6 +68,29 @@ app.include_router(profiles_api.router, prefix="/api/v1/profiles", tags=["profil
 @app.on_event("startup")
 def _startup() -> None:
     init_db()
+
+
+# ===== 静态前端 (如果 ../static 存在则挂载) =====
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+if STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists():
+    # /assets 等静态资源
+    app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    def _index():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def _favicon():
+        return FileResponse(STATIC_DIR / "favicon.svg")
+
+    # SPA fallback - 任何未匹配 /api /docs 的路由返回 index.html
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def _spa_fallback(full_path: str):
+        if full_path.startswith(("api/", "docs", "openapi.json", "redoc")):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404)
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 # ----------- Dashboard 三盘联动聚合端点 -----------

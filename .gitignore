@@ -91,3 +91,5 @@ logs/
 # =========================
 data/cache/
 data/tmp/
+/_deploy.py
+/backend/tools/dlr_crosscheck/

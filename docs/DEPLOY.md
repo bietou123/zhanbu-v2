@@ -65,11 +65,11 @@ docker compose logs -f
 3. **HTTPS 加密**（可选）：
    - 飞牛 NAS 装 Nginx Proxy Manager，申请 Let's Encrypt 证书，反代到 8088
 
-### 方案 3：用您的 arrowwood.top 服务器做反代（推荐进阶）
+### 方案 3：用公网服务器做反代（推荐进阶）
 
-您已有公网服务器 (`gitea.arrowwood.top`)：
+如果您有公网服务器：
 
-1. 在那台公网服务器上配 nginx，把 `zhanbu.arrowwood.top` 反代到您家 NAS
+1. 在公网服务器上配 nginx，把 `zhanbu.example.com` 反代到 NAS
 2. 但要让公网服务器能访问家里 NAS：可以用 **frp / nps / Tailscale** 打通
 3. 最稳但配置最复杂
 
