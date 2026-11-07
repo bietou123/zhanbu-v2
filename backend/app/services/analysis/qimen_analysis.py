@@ -24,6 +24,31 @@ def _luck_score(palace: dict) -> int:
     return score
 
 
+def _parse_ushen(text: str) -> list[str]:
+    return [t.strip() for t in str(text or "").split("/") if t.strip()]
+
+
+def _want_names(token: str) -> list[str]:
+    """'乙奇' 落到天盘干 '乙'；其余用神按字面匹配。"""
+    if len(token) == 2 and token.endswith("奇"):
+        return [token[0]]
+    return [token]
+
+
+def _find_ushen(palaces: list[dict], tokens: list[str]):
+    """按用神书写顺序（优先级）找第一个命中的宫位。
+
+    旧实现只拿「门」去比对整串用神，婚姻(六合)、求医(天心) 之类永远匹配不到。
+    """
+    for token in tokens:
+        for want in _want_names(token):
+            for p in palaces:
+                for key in ("gate", "star", "spirit", "tian_pan_gan"):
+                    if p.get(key) == want:
+                        return p, want
+    return None
+
+
 def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
     palaces = qimen["palaces"]
     patterns = judge(qimen)
@@ -52,13 +77,13 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
 
     advices = []
     for theme, info in qimen.get("ushen_reference", {}).items():
-        # 找含有 "生门" 的宫等
-        for p in palaces:
-            if p.get("gate") and p["gate"] in info["用神"]:
-                advices.append(
-                    f"{theme}：{info['用神']} → 现位 {p['palace']}宫 ({p['direction']})"
-                )
-                break
+        found = _find_ushen(palaces, _parse_ushen(info.get("用神", "")))
+        if not found:
+            continue
+        p, name = found
+        advices.append(
+            f"{theme}：{info['用神']} → {name} 现位 {p['palace']}宫 ({p['direction']})"
+        )
 
     return {
         "summary": summary,
