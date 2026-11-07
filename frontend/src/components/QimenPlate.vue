@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-const props = defineProps<{ data: any }>()
+const props = defineProps<{ data: any; patterns?: any }>()
 
 // 洛书九宫
 const LO_SHU = [
@@ -14,6 +14,10 @@ const palaceMap = computed(() => {
   for (const p of props.data?.palaces || []) m[p.palace] = p
   return m
 })
+
+// 格局判定结果：{patterns, ji, xiong, score_delta, summary}
+const patternList = computed<any[]>(() => props.patterns?.patterns || [])
+const patternScore = computed<number>(() => props.patterns?.score_delta ?? 0)
 
 const luckColor = (l: string) => ({
   '大吉': 'text-jade-400',
@@ -110,6 +114,35 @@ const luckColor = (l: string) => ({
         <div class="text-[10px] text-slate-400">
           原 {{ data.zhi_fu_zhi_shi?.zhi_shi_orig_palace }}宫 → 飞 {{ data.zhi_fu_zhi_shi?.zhi_shi_now_palace }}宫
         </div>
+      </div>
+    </div>
+
+    <!-- 格局判定 -->
+    <div v-if="patterns" class="rounded-md bg-ink-900/40 border border-ink-600/40 p-3 space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="text-[10px] text-ink-500">格局</div>
+        <div class="text-[10px] font-mono"
+             :class="patternScore > 0 ? 'text-jade-400'
+                   : patternScore < 0 ? 'text-red-300' : 'text-slate-400'">
+          {{ patternScore > 0 ? '+' : '' }}{{ patternScore }}
+        </div>
+      </div>
+
+      <div v-if="patternList.length" class="space-y-1">
+        <div v-for="(p, i) in patternList" :key="i" class="flex items-start gap-1.5">
+          <span class="text-[9px] md:text-[10px] px-1 rounded shrink-0"
+                :class="p.type === '吉'
+                  ? 'bg-jade-500/10 text-jade-400 border border-jade-500/40'
+                  : 'bg-red-500/10 text-red-300 border border-red-500/40'">
+            {{ p.name }}
+          </span>
+          <span class="text-[9px] md:text-[10px] text-slate-400 leading-relaxed">
+            {{ p.detail }}
+          </span>
+        </div>
+      </div>
+      <div v-else class="text-[10px] text-ink-500 italic">
+        本盘未见常见吉凶格局，以值符值使与用神宫位为主判断。
       </div>
     </div>
 

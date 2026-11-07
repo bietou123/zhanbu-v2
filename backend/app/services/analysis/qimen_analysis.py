@@ -1,6 +1,8 @@
-"""奇门遁甲分析层 —— 值符值使吉凶 + 用神指引"""
+"""奇门遁甲分析层 —— 值符值使吉凶 + 格局判定 + 用神指引"""
 from __future__ import annotations
 from typing import Any
+
+from app.services.analysis.qimen_patterns import judge
 
 
 def _luck_score(palace: dict) -> int:
@@ -24,7 +26,19 @@ def _luck_score(palace: dict) -> int:
 
 def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
     palaces = qimen["palaces"]
-    scored = [{"palace": p, "score": _luck_score(p)} for p in palaces]
+    patterns = judge(qimen)
+
+    # 格局按宫位累计，用于修正单宫吉凶排序
+    delta_by_palace: dict[int, float] = {}
+    for pt in patterns["patterns"]:
+        pid = pt.get("palace")
+        if pid:
+            delta_by_palace[pid] = delta_by_palace.get(pid, 0) + pt["score"]
+
+    scored = [
+        {"palace": p, "score": _luck_score(p) + delta_by_palace.get(p["palace"], 0)}
+        for p in palaces
+    ]
     scored.sort(key=lambda x: x["score"], reverse=True)
     best = scored[0]["palace"]
     worst = scored[-1]["palace"]
@@ -62,6 +76,7 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
             "advice": f"今日避忌方位为 {worst['direction']}（第{worst['palace']}宫）",
         },
         "ushen_advice": advices,
+        "patterns": patterns,
         "overall": (
             "奇门以「格局」为重："
             "天门 (开/休/生 + 直符/九天/六合) 见者，事可成；"

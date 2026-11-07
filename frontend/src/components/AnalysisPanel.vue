@@ -22,6 +22,8 @@ function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
   }
   for (const [k, v] of Object.entries(obj)) {
     if (v == null || v === '') continue
+    // 奇门格局是结构化数组，已在 QimenPlate 里单独渲染，这里跳过避免压扁成一长串
+    if (prefix === '' && k === 'patterns') continue
     if (typeof v === 'object' && !Array.isArray(v)) {
       out.push(...flatten(v, k))
     } else {

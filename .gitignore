@@ -93,3 +93,5 @@ data/cache/
 data/tmp/
 /_deploy.py
 /backend/tools/dlr_crosscheck/
+# 前端构建产物（部署时由 vite build 生成，不入库）
+/backend/app/static/

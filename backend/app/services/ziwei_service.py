@@ -10,8 +10,10 @@ ZiWei Service —— 紫微斗数排盘
   6. 四化（年干 → 禄、权、科、忌）
   7. 十二宫宫位 + 宫干（五虎遁年起月法）
 
-注：辅星（左辅右弼、文昌文曲）、煞星（擎羊陀罗火铃）属增强功能，
-后续 milestone 再添；当前先确保骨架正确。
+  8. 辅星（左辅右弼、文昌文曲、天魁天钺、禄存）
+  9. 煞星（擎羊陀罗、火星铃星、地空地劫）
+
+辅星/煞星安星口诀均采用主流三合派（中州派一致），见 _layout_aux_stars。
 """
 from __future__ import annotations
 
@@ -162,6 +164,76 @@ def _layout_14_main_stars(ziwei_idx: int) -> dict[str, int]:
     return stars
 
 
+# ───────────────── 辅星 / 煞星 ─────────────────
+
+# 天魁天钺（年干）：口诀「甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸兔蛇藏，六辛逢马虎」
+KUI_YUE = {
+    "甲": (1, 7), "戊": (1, 7), "庚": (1, 7),   # 丑未
+    "乙": (0, 8), "己": (0, 8),                  # 子申
+    "丙": (11, 9), "丁": (11, 9),                # 亥酉
+    "辛": (6, 2),                                # 午寅
+    "壬": (3, 5), "癸": (3, 5),                  # 卯巳
+}
+
+# 禄存（年干）：甲寅 乙卯 丙戊巳 丁己午 庚申 辛酉 壬亥 癸子
+LU_CUN = {
+    "甲": 2, "乙": 3, "丙": 5, "丁": 6, "戊": 5,
+    "己": 6, "庚": 8, "辛": 9, "壬": 11, "癸": 0,
+}
+
+# 火星铃星起点（年支三合）：(火星宫, 铃星宫)
+HUO_LING_START = {
+    "寅": (1, 3), "午": (1, 3), "戌": (1, 3),   # 火丑 铃卯
+    "申": (2, 10), "子": (2, 10), "辰": (2, 10),  # 火寅 铃戌
+    "巳": (3, 10), "酉": (3, 10), "丑": (3, 10),  # 火卯 铃戌
+    "亥": (9, 10), "卯": (9, 10), "未": (9, 10),  # 火酉 铃戌
+}
+
+AUX_LUCKY = ["左辅", "右弼", "文昌", "文曲", "天魁", "天钺", "禄存"]
+AUX_SHA = ["擎羊", "陀罗", "火星", "铃星", "地空", "地劫"]
+
+
+def _layout_aux_stars(
+    year_gan: str, year_zhi: str, lunar_month: int, hour_zhi_idx: int
+) -> dict[str, dict]:
+    """
+    安辅星与煞星。返回 {星名: {"idx": 地支index, "kind": "吉星"/"煞星"}}。
+
+    口诀（三合派）：
+      左辅：辰宫起正月顺行至生月       右弼：戌宫起正月逆行至生月
+      文昌：戌宫起子时逆数至生时       文曲：辰宫起子时顺数至生时
+      天魁天钺：年干查表
+      禄存：年干查表；擎羊 = 禄存顺行一位，陀罗 = 禄存逆行一位
+      火星铃星：年支三合定起点，顺数至生时
+      地劫：亥宫起子时顺行至生时       地空：亥宫起子时逆行至生时
+    """
+    month_step = (lunar_month - 1) % 12
+    out: dict[str, dict] = {}
+
+    out["左辅"] = {"idx": (4 + month_step) % 12, "kind": "吉星"}   # 辰=4
+    out["右弼"] = {"idx": (10 - month_step) % 12, "kind": "吉星"}  # 戌=10
+    out["文昌"] = {"idx": (10 - hour_zhi_idx) % 12, "kind": "吉星"}
+    out["文曲"] = {"idx": (4 + hour_zhi_idx) % 12, "kind": "吉星"}
+
+    kui, yue = KUI_YUE[year_gan]
+    out["天魁"] = {"idx": kui, "kind": "吉星"}
+    out["天钺"] = {"idx": yue, "kind": "吉星"}
+
+    lu = LU_CUN[year_gan]
+    out["禄存"] = {"idx": lu, "kind": "吉星"}
+    out["擎羊"] = {"idx": (lu + 1) % 12, "kind": "煞星"}
+    out["陀罗"] = {"idx": (lu - 1) % 12, "kind": "煞星"}
+
+    huo_start, ling_start = HUO_LING_START[year_zhi]
+    out["火星"] = {"idx": (huo_start + hour_zhi_idx) % 12, "kind": "煞星"}
+    out["铃星"] = {"idx": (ling_start + hour_zhi_idx) % 12, "kind": "煞星"}
+
+    out["地劫"] = {"idx": (11 + hour_zhi_idx) % 12, "kind": "煞星"}  # 亥=11 顺行
+    out["地空"] = {"idx": (11 - hour_zhi_idx) % 12, "kind": "煞星"}
+
+    return out
+
+
 class ZiWeiService:
     @classmethod
     def compute(
@@ -189,6 +261,7 @@ class ZiWeiService:
         hour_zhi_idx = _hour_to_zhi_idx(dt.hour)
         year_ganzhi = lunar.getYearInGanZhi()
         year_gan = year_ganzhi[0]
+        year_zhi = year_ganzhi[1]
 
         # 1. 命宫 / 身宫
         ming = _ming_gong_index(lunar_month, hour_zhi_idx)
@@ -201,6 +274,7 @@ class ZiWeiService:
         # 3. 起紫微
         ziwei_idx = _ziwei_position(ju, lunar_day)
         stars = _layout_14_main_stars(ziwei_idx)
+        aux = _layout_aux_stars(year_gan, year_zhi, lunar_month, hour_zhi_idx)
 
         # 4. 安四化
         si_hua = SI_HUA[year_gan]
@@ -212,14 +286,18 @@ class ZiWeiService:
             offset = (zhi_idx - _yin_idx()) % 12
             gan_idx = (TIAN_GAN.index(WU_HU_DUN[year_gan]) + offset) % 10
             palace_ganzhi = TIAN_GAN[gan_idx] + DI_ZHI[zhi_idx]
-            palace_stars = [s for s, idx in stars.items() if idx == zhi_idx]
-            # 标注四化
+
+            # 主星在前，辅星次之，煞星最后
+            here = [({"name": s, "kind": "主星"}, s) for s, idx in stars.items() if idx == zhi_idx]
+            here += [({"name": s, "kind": info["kind"]}, s) for s, info in aux.items() if info["idx"] == zhi_idx]
+
             palace_stars_with_hua = []
-            for s in palace_stars:
+            for star, s in here:
                 hua = next((k for k, v in si_hua.items() if v == s), None)
-                palace_stars_with_hua.append(
-                    {"name": s, "si_hua": hua} if hua else {"name": s}
-                )
+                if hua:
+                    star["si_hua"] = hua
+                palace_stars_with_hua.append(star)
+
             palaces.append({
                 "name": name,
                 "zhi": DI_ZHI[zhi_idx],
@@ -245,9 +323,14 @@ class ZiWeiService:
             "wu_xing_ju": {"code": ju, "name": JU_NAME[ju]},
             "ziwei_position": DI_ZHI[ziwei_idx],
             "stars_position": {k: DI_ZHI[v] for k, v in stars.items()},
+            "aux_stars_position": {
+                k: {"zhi": DI_ZHI[v["idx"]], "kind": v["kind"]} for k, v in aux.items()
+            },
+            "lucky_stars": AUX_LUCKY,
+            "sha_stars": AUX_SHA,
             "si_hua": si_hua,
             "palaces": palaces,
-            "note": "基础版：14 主星 + 四化 + 十二宫；辅/煞星后续 milestone 增补。",
+            "note": "14 主星 + 7 吉星 + 6 煞星 + 四化 + 十二宫。",
         }
         result["analysis"] = ziwei_analysis.analyze(result)
         return result

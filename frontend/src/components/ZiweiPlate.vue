@@ -56,8 +56,12 @@ const palaceMap = computed(() => {
             </div>
             <div class="flex flex-wrap gap-0.5 flex-1 content-start">
               <span v-for="s in palaceMap[zhi]?.stars || []" :key="s.name"
-                    class="text-[9px] md:text-[10px] px-1 rounded
-                           bg-ink-700/60 text-slate-200">
+                    class="text-[9px] md:text-[10px] px-1 rounded"
+                    :class="{
+                      'bg-ink-700/70 text-slate-100': s.kind === '主星',
+                      'bg-jade-500/15 text-jade-400': s.kind === '吉星',
+                      'bg-red-500/15 text-red-300': s.kind === '煞星',
+                    }">
                 {{ s.name }}<span v-if="s.si_hua" class="text-ember-400">·{{ s.si_hua }}</span>
               </span>
             </div>
@@ -83,6 +87,21 @@ const palaceMap = computed(() => {
           </div>
         </template>
       </template>
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap text-[10px] text-ink-500">
+      <span class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-sm bg-ink-700 inline-block"></span>主星
+      </span>
+      <span class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-sm bg-jade-500/60 inline-block"></span>吉星
+      </span>
+      <span class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-sm bg-red-500/60 inline-block"></span>煞星
+      </span>
+      <span class="flex items-center gap-1">
+        <span class="text-ember-400">·禄权科忌</span>四化
+      </span>
     </div>
 
     <div class="text-[10px] text-ink-500 italic">{{ data.note }}</div>

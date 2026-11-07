@@ -69,14 +69,14 @@ const ctxLine = (d: any) => {
       <div class="hidden lg:grid lg:grid-cols-3 gap-4 xl:gap-6">
         <BaziPlate :data="triple.bazi" />
         <ZiweiPlate :data="triple.ziwei" />
-        <QimenPlate :data="triple.qimen" />
+        <QimenPlate :data="triple.qimen" :patterns="triple.qimen?.analysis?.patterns" />
       </div>
 
       <!-- 平板端 -->
       <div class="hidden md:grid md:grid-cols-2 lg:hidden gap-4">
         <BaziPlate :data="triple.bazi" class="md:col-span-2" />
         <ZiweiPlate :data="triple.ziwei" />
-        <QimenPlate :data="triple.qimen" />
+        <QimenPlate :data="triple.qimen" :patterns="triple.qimen?.analysis?.patterns" />
       </div>
 
       <!-- 手机端 tab -->
@@ -94,7 +94,8 @@ const ctxLine = (d: any) => {
         </div>
         <BaziPlate v-if="mobileTab === 'bazi'" :data="triple.bazi" />
         <ZiweiPlate v-if="mobileTab === 'ziwei'" :data="triple.ziwei" />
-        <QimenPlate v-if="mobileTab === 'qimen'" :data="triple.qimen" />
+        <QimenPlate v-if="mobileTab === 'qimen'" :data="triple.qimen"
+                    :patterns="triple.qimen?.analysis?.patterns" />
       </div>
 
       <!-- 分析层：三盘各自的解读 -->
