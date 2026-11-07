@@ -28,6 +28,19 @@ def _parse_ushen(text: str) -> list[str]:
     return [t.strip() for t in str(text or "").split("/") if t.strip()]
 
 
+def _grade(score: float) -> str:
+    """单宫综合分 → 五级吉凶（与门/星吉凶口径一致）。"""
+    if score >= 3:
+        return "大吉"
+    if score >= 1.5:
+        return "吉"
+    if score > -1:
+        return "平"
+    if score > -2.5:
+        return "凶"
+    return "大凶"
+
+
 def _want_names(token: str) -> list[str]:
     """'乙奇' 落到天盘干 '乙'；其余用神按字面匹配。"""
     if len(token) == 2 and token.endswith("奇"):
@@ -76,6 +89,7 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
     )
 
     advices = []
+    details: list[dict] = []
     for theme, info in qimen.get("ushen_reference", {}).items():
         found = _find_ushen(palaces, _parse_ushen(info.get("用神", "")))
         if not found:
@@ -84,6 +98,73 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
         advices.append(
             f"{theme}：{info['用神']} → {name} 现位 {p['palace']}宫 ({p['direction']})"
         )
+        details.append({
+            "theme": theme,
+            "want": info["用神"],
+            "hit": name,
+            "palace": p["palace"],
+            "direction": p["direction"],
+            "gate": p.get("gate") or "",
+            "star": p.get("star") or "",
+            "spirit": p.get("spirit") or "",
+        })
+
+    # 单宫综合分（门/星/神 + 格局修正），用于给用神落点定吉凶
+    palace_score = {
+        sc["palace"]["palace"]: sc["score"] for sc in scored
+    }
+    pattern_names: dict[int, list[str]] = {}
+    good_by_palace: dict[int, list[str]] = {}
+    bad_by_palace: dict[int, list[str]] = {}
+    for pt in patterns["patterns"]:
+        pid = pt.get("palace")
+        if not pid:
+            continue
+        pattern_names.setdefault(pid, []).append(pt["name"])
+        bucket = bad_by_palace if pt.get("type") == "凶" else good_by_palace
+        bucket.setdefault(pid, []).append(pt["name"])
+
+    for d in details:
+        score = round(palace_score.get(d["palace"], 0.0), 2)
+        d["score"] = score
+        d["grade"] = _grade(score)
+        d["patterns"] = pattern_names.get(d["palace"], [])
+        d["good_patterns"] = good_by_palace.get(d["palace"], [])
+        d["bad_patterns"] = bad_by_palace.get(d["palace"], [])
+
+    # 按宫位聚合：同一方位适合办哪几件事，按吉凶排序
+    merged: dict[int, dict] = {}
+    for d in details:
+        g = merged.setdefault(d["palace"], {
+            "palace": d["palace"],
+            "direction": d["direction"],
+            "score": d["score"],
+            "grade": d["grade"],
+            "compose": " + ".join(
+                x for x in (d["star"], d["gate"], d["spirit"]) if x
+            ) or "—",
+            "patterns": d["patterns"],
+            "good_patterns": d["good_patterns"],
+            "bad_patterns": d["bad_patterns"],
+            "themes": [],
+            "hits": [],
+        })
+        if d["theme"] not in g["themes"]:
+            g["themes"].append(d["theme"])
+        if d["hit"] and d["hit"] not in g["hits"]:
+            g["hits"].append(d["hit"])
+
+    ushen_directions = sorted(
+        merged.values(),
+        key=lambda x: (x["score"], len(x["themes"])),
+        reverse=True,
+    )
+    # 标记是否就是全盘最高分宫（与 best_palace 对照，避免两处说法打架）
+    for g in ushen_directions:
+        g["is_best"] = g["palace"] == best["palace"]
+
+    def _compose(p: dict) -> str:
+        return " + ".join(x for x in (p.get("star"), p.get("gate"), p.get("spirit")) if x) or "—"
 
     return {
         "summary": summary,
@@ -91,16 +172,18 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
             "palace": best["palace"],
             "direction": best["direction"],
             "bagua": best["bagua"],
-            "compose": f"{best['star']} + {best['gate']} + {best['spirit']}",
+            "compose": _compose(best),
             "advice": f"今日最吉方位为 {best['direction']}（第{best['palace']}宫）",
         },
         "worst_palace": {
             "palace": worst["palace"],
             "direction": worst["direction"],
-            "compose": f"{worst['star']} + {worst['gate']} + {worst['spirit']}",
+            "compose": _compose(worst),
             "advice": f"今日避忌方位为 {worst['direction']}（第{worst['palace']}宫）",
         },
         "ushen_advice": advices,
+        "ushen_detail": details,
+        "ushen_directions": ushen_directions,
         "patterns": patterns,
         "overall": (
             "奇门以「格局」为重："

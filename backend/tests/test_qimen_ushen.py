@@ -81,6 +81,98 @@ def test_gan_qi_lands_on_tian_pan_gan():
 def test_empty_plate_has_no_advice():
     r = analyze(_qimen())
     assert r["ushen_advice"] == []
+    assert r["ushen_detail"] == []
+    assert r["ushen_directions"] == []
+
+
+def test_detail_carries_score_and_grade():
+    r = analyze(_qimen([_palace(3, spirit="六合")]))
+    d = next(x for x in r["ushen_detail"] if x["theme"] == "婚姻")
+    assert d["palace"] == 3
+    assert d["hit"] == "六合"
+    assert isinstance(d["score"], (int, float))
+    assert d["grade"] in {"大吉", "吉", "平", "凶", "大凶"}
+
+
+def test_good_palace_graded_auspicious():
+    """生门(大吉 2) + 天心(大吉 2) + 六合(1) = 5 分 → 大吉。"""
+    r = analyze(_qimen([
+        _palace(8, gate="生门", gate_luck="大吉",
+                star="天心", star_luck="大吉", spirit="六合"),
+    ]))
+    d = next(x for x in r["ushen_detail"] if x["theme"] == "婚姻")
+    assert d["palace"] == 8
+    assert d["score"] == 5
+    assert d["grade"] == "大吉"
+
+
+def test_pattern_delta_downgrades_palace():
+    """同一吉宫命中凶格「白虎猖狂」(-2.0)，等级由大吉降为吉。
+
+    用辛/乙 而非庚/癸：天盘庚在艮八会同时触发入墓 + 击刑，
+    拿它测单一格局会把三档扣分混在一起。
+    """
+    base = dict(gate="生门", gate_luck="大吉", star="天心", star_luck="大吉")
+    plain = analyze(_qimen([_palace(8, **base)]))
+    flawed = analyze(_qimen([
+        _palace(8, tian_pan_gan="辛", di_pan_gan="乙", **base),
+    ]))
+    a = next(x for x in plain["ushen_detail"] if x["theme"] == "求财")
+    b = next(x for x in flawed["ushen_detail"] if x["theme"] == "求财")
+    assert a["grade"] == "大吉"
+    assert b["score"] == a["score"] - 2
+    assert b["grade"] == "吉"
+    assert "白虎猖狂" in b["patterns"]
+
+
+def test_directions_merge_same_palace():
+    r = analyze(_qimen([
+        _palace(6, gate="开门", gate_luck="大吉", spirit="六合"),
+    ]))
+    g = next(x for x in r["ushen_directions"] if x["palace"] == 6)
+    # 求财/婚姻/合作(六合) + 出行/谋职/搬迁(开门) 都聚到同一宫
+    assert len(g["themes"]) >= 4
+    assert "开门" in g["compose"]
+    assert "六合" in g["hits"]
+
+
+def test_directions_sorted_by_score_desc():
+    r = analyze(_qimen([
+        _palace(1, gate="生门", gate_luck="大吉", star="天心", star_luck="大吉"),
+        _palace(7, gate="死门", gate_luck="大凶", spirit="玄武"),
+    ]))
+    scores = [x["score"] for x in r["ushen_directions"]]
+    assert scores == sorted(scores, reverse=True)
+    assert r["ushen_directions"][0]["grade"] == "大吉"
+
+
+def test_direction_patterns_split_by_type():
+    """方位卡里吉格/凶格分开装，前端才能分色显示。"""
+    r = analyze(_qimen([
+        _palace(8, gate="生门", gate_luck="大吉", star="天心", star_luck="大吉",
+                tian_pan_gan="辛", di_pan_gan="乙"),
+    ]))
+    g = next(x for x in r["ushen_directions"] if x["palace"] == 8)
+    assert "白虎猖狂" in g["bad_patterns"]
+    assert "白虎猖狂" in g["patterns"]
+    assert g["good_patterns"] == []
+
+
+def test_best_flag_at_most_once():
+    """is_best 只标记全盘最高分宫，不会重复标。"""
+    r = analyze(_qimen([
+        _palace(6, gate="开门", gate_luck="大吉", spirit="六合"),
+        _palace(1, gate="死门", gate_luck="大凶", spirit="玄武"),
+    ]))
+    flags = [x["palace"] for x in r["ushen_directions"] if x["is_best"]]
+    assert len(flags) <= 1
+
+
+def test_compose_skips_empty_slots():
+    """门/星/神缺失时不能拼出 'None'。"""
+    r = analyze(_qimen([_palace(3, gate="生门", gate_luck="大吉")]))
+    for key in ("best_palace", "worst_palace"):
+        assert "None" not in r[key]["compose"]
 
 
 def test_reference_table_well_formed():

@@ -13,7 +13,10 @@ const USHEN_RE = /^(.+?)：(.+?) → (.+?) 现位 (\d+)宫 \((.+?)\)$/
 function parseUshen(line: string) {
   const m = USHEN_RE.exec(String(line))
   if (!m) {
-    return { theme: String(line), tokens: [] as string[], hit: '', palace: '', direction: '' }
+    return {
+      theme: String(line), tokens: [] as string[], hit: '',
+      palace: '', direction: '', grade: '',
+    }
   }
   return {
     theme: m[1],
@@ -21,12 +24,45 @@ function parseUshen(line: string) {
     hit: m[3],
     palace: m[4],
     direction: m[5],
+    grade: '',
   }
 }
 
+const GRADE_TEXT: Record<string, string> = {
+  大吉: 'text-gold-400',
+  吉: 'text-cyber-300',
+  平: 'text-slate-400',
+  凶: 'text-red-300',
+  大凶: 'text-red-400',
+}
+const GRADE_BORDER: Record<string, string> = {
+  大吉: 'border-gold-500/50',
+  吉: 'border-cyber-500/40',
+  平: 'border-ink-600/40',
+  凶: 'border-red-500/30',
+  大凶: 'border-red-500/50',
+}
+
 const ushenAdvice = computed(() => {
+  const detail = props.analysis?.ushen_detail
+  if (Array.isArray(detail) && detail.length) {
+    return detail.map((d: any) => ({
+      theme: d.theme,
+      tokens: String(d.want || '').split('/').map((s) => s.trim()).filter(Boolean),
+      hit: d.hit,
+      palace: String(d.palace ?? ''),
+      direction: d.direction || '',
+      grade: d.grade || '',
+    }))
+  }
+  // 兼容旧后端：只有字符串数组
   const arr = props.analysis?.ushen_advice
   return Array.isArray(arr) ? arr.map(parseUshen) : []
+})
+
+const ushenDirections = computed(() => {
+  const arr = props.analysis?.ushen_directions
+  return Array.isArray(arr) ? arr : []
 })
 
 function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
@@ -46,9 +82,13 @@ function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
   }
   for (const [k, v] of Object.entries(obj)) {
     if (v == null || v === '') continue
-    // 奇门格局是结构化数组，已在 QimenPlate 里单独渲染，这里跳过避免压扁成一长串
-    // 用神指引同上：下面用独立网格逐条渲染
-    if (prefix === '' && (k === 'patterns' || k === 'ushen_advice')) continue
+    // 奇门格局、用神指引都是结构化数组，下面用独立网格渲染，
+    // 这里跳过，避免被压扁成 JSON 长串
+    if (
+      prefix === '' &&
+      (k === 'patterns' || k === 'ushen_advice' ||
+       k === 'ushen_detail' || k === 'ushen_directions')
+    ) continue
     if (typeof v === 'object' && !Array.isArray(v)) {
       out.push(...flatten(v, k))
     } else {
@@ -132,6 +172,44 @@ const labelMap: Record<string, string> = {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      <div v-if="ushenDirections.length"
+           class="rounded-lg bg-ink-900/40 border border-ink-600/40 px-3 py-2
+                  md:col-span-2 hover:border-cyber-400/40 transition">
+        <div class="label">宜往方位 · 按吉凶排序</div>
+        <div class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div v-for="d in ushenDirections" :key="d.palace"
+               class="rounded-md bg-ink-900/60 border px-2 py-1.5"
+               :class="GRADE_BORDER[d.grade] || 'border-ink-600/30'">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="font-kai text-sm text-slate-100">
+                {{ d.direction }}
+                <span class="text-[10px] text-slate-500">{{ d.palace }}宫</span>
+                <span v-if="d.is_best" class="text-[10px] text-gold-400">★全盘最吉</span>
+              </span>
+              <span class="text-[11px] whitespace-nowrap"
+                    :class="GRADE_TEXT[d.grade] || 'text-slate-400'">
+                {{ d.grade }}
+                <span class="text-slate-500">{{ d.score }}</span>
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5 truncate"
+                 :title="d.compose">{{ d.compose }}</div>
+            <div class="text-[11px] text-slate-300 mt-1 leading-snug">
+              {{ (d.themes || []).join(' · ') }}
+            </div>
+            <div v-if="d.good_patterns?.length || d.bad_patterns?.length"
+                 class="text-[10px] mt-0.5 leading-snug flex flex-wrap gap-x-1.5">
+              <span v-if="d.good_patterns?.length" class="text-jade-400">
+                {{ d.good_patterns.join(' / ') }}
+              </span>
+              <span v-if="d.bad_patterns?.length" class="text-ember-300">
+                {{ d.bad_patterns.join(' / ') }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="ushenAdvice.length"
            class="rounded-lg bg-ink-900/40 border border-ink-600/40 px-3 py-2
                   md:col-span-2 hover:border-cyber-400/40 transition">
@@ -142,8 +220,9 @@ const labelMap: Record<string, string> = {
                class="flex items-baseline justify-between gap-2 rounded-md
                       bg-ink-900/60 border border-ink-600/30 px-2 py-1">
             <span class="text-xs text-slate-200 font-kai shrink-0">{{ u.theme }}</span>
-            <span class="text-[11px] text-cyber-300 whitespace-nowrap">
+            <span class="text-[11px] whitespace-nowrap text-slate-400">
               {{ u.hit }} · {{ u.palace }}宫 {{ u.direction }}
+              <span v-if="u.grade" :class="GRADE_TEXT[u.grade]">· {{ u.grade }}</span>
             </span>
           </div>
         </div>
