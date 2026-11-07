@@ -73,13 +73,16 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
         if pid:
             delta_by_palace[pid] = delta_by_palace.get(pid, 0) + pt["score"]
 
-    scored = [
+    scored_all = [
         {"palace": p, "score": _luck_score(p) + delta_by_palace.get(p["palace"], 0)}
         for p in palaces
     ]
+    # 中宫（5宫）无门无神、方位也不属于八方位，不参与最吉/避忌评选
+    scored = [sc for sc in scored_all if sc["palace"]["palace"] != 5] or scored_all
     scored.sort(key=lambda x: x["score"], reverse=True)
-    best = scored[0]["palace"]
-    worst = scored[-1]["palace"]
+    best_item, worst_item = scored[0], scored[-1]
+    best = best_item["palace"]
+    worst = worst_item["palace"]
 
     zfzs = qimen["zhi_fu_zhi_shi"]
     summary = (
@@ -162,6 +165,8 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
     # 标记是否就是全盘最高分宫（与 best_palace 对照，避免两处说法打架）
     for g in ushen_directions:
         g["is_best"] = g["palace"] == best["palace"]
+        if g["palace"] == 5:
+            g["note"] = "中宫无门无神，奇门寄坤二宫"
 
     def _compose(p: dict) -> str:
         return " + ".join(x for x in (p.get("star"), p.get("gate"), p.get("spirit")) if x) or "—"
@@ -173,12 +178,15 @@ def analyze(qimen: dict[str, Any]) -> dict[str, Any]:
             "direction": best["direction"],
             "bagua": best["bagua"],
             "compose": _compose(best),
+            "score": round(best_item["score"], 2),
             "advice": f"今日最吉方位为 {best['direction']}（第{best['palace']}宫）",
         },
         "worst_palace": {
             "palace": worst["palace"],
             "direction": worst["direction"],
+            "bagua": worst["bagua"],
             "compose": _compose(worst),
+            "score": round(worst_item["score"], 2),
             "advice": f"今日避忌方位为 {worst['direction']}（第{worst['palace']}宫）",
         },
         "ushen_advice": advices,

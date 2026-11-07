@@ -65,6 +65,9 @@ const ushenDirections = computed(() => {
   return Array.isArray(arr) ? arr : []
 })
 
+const bestPalace = computed(() => props.analysis?.best_palace || null)
+const worstPalace = computed(() => props.analysis?.worst_palace || null)
+
 function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
   const out: { key: string; value: string }[] = []
   if (obj == null || obj === '') return out
@@ -87,7 +90,8 @@ function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
     if (
       prefix === '' &&
       (k === 'patterns' || k === 'ushen_advice' ||
-       k === 'ushen_detail' || k === 'ushen_directions')
+       k === 'ushen_detail' || k === 'ushen_directions' ||
+       k === 'best_palace' || k === 'worst_palace')
     ) continue
     if (typeof v === 'object' && !Array.isArray(v)) {
       out.push(...flatten(v, k))
@@ -172,6 +176,26 @@ const labelMap: Record<string, string> = {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      <div v-if="bestPalace || worstPalace"
+           class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:col-span-2">
+        <div v-if="bestPalace"
+             class="rounded-lg bg-gold-500/5 border border-gold-500/40 px-3 py-2">
+          <div class="label text-gold-400/80">全盘最吉 · {{ bestPalace.direction }} {{ bestPalace.palace }}宫</div>
+          <div class="text-xs text-slate-200 mt-0.5">
+            {{ bestPalace.bagua }}宫 · {{ bestPalace.compose }}
+          </div>
+          <div class="text-[11px] text-gold-400/70 mt-0.5">综合 {{ bestPalace.score }} 分</div>
+        </div>
+        <div v-if="worstPalace"
+             class="rounded-lg bg-red-500/5 border border-red-500/30 px-3 py-2">
+          <div class="label text-red-300/80">全盘避忌 · {{ worstPalace.direction }} {{ worstPalace.palace }}宫</div>
+          <div class="text-xs text-slate-200 mt-0.5">
+            {{ worstPalace.bagua }}宫 · {{ worstPalace.compose }}
+          </div>
+          <div class="text-[11px] text-red-300/70 mt-0.5">综合 {{ worstPalace.score }} 分</div>
+        </div>
+      </div>
+
       <div v-if="ushenDirections.length"
            class="rounded-lg bg-ink-900/40 border border-ink-600/40 px-3 py-2
                   md:col-span-2 hover:border-cyber-400/40 transition">
@@ -197,6 +221,7 @@ const labelMap: Record<string, string> = {
             <div class="text-[11px] text-slate-300 mt-1 leading-snug">
               {{ (d.themes || []).join(' · ') }}
             </div>
+            <div v-if="d.note" class="text-[10px] text-slate-500 mt-0.5">{{ d.note }}</div>
             <div v-if="d.good_patterns?.length || d.bad_patterns?.length"
                  class="text-[10px] mt-0.5 leading-snug flex flex-wrap gap-x-1.5">
               <span v-if="d.good_patterns?.length" class="text-jade-400">

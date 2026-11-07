@@ -175,6 +175,34 @@ def test_compose_skips_empty_slots():
         assert "None" not in r[key]["compose"]
 
 
+def test_center_palace_never_picked():
+    """中宫无门无神、不属于八方位，即使分数最高/最低也不能当选。"""
+    r = analyze(_qimen([
+        _palace(5, star="天禽", star_luck="大吉", gate_luck="大吉"),
+        _palace(1, gate="死门", gate_luck="大凶", spirit="白虎"),
+    ]))
+    assert r["best_palace"]["palace"] != 5
+    assert r["worst_palace"]["palace"] != 5
+
+
+def test_worst_palace_has_bagua():
+    """最吉宫有八卦名，避忌宫也得有，否则前端少显示一格。"""
+    r = analyze(_qimen([_palace(1, gate="死门", gate_luck="大凶", spirit="白虎")]))
+    assert r["best_palace"]["bagua"]
+    assert r["worst_palace"]["bagua"]
+
+
+def test_best_worst_carry_score():
+    r = analyze(_qimen([
+        _palace(6, gate="开门", gate_luck="大吉", spirit="六合"),
+        _palace(1, gate="死门", gate_luck="大凶", spirit="白虎"),
+    ]))
+    assert r["best_palace"]["score"] == 3
+    # 具体数值受该宫格局修正影响，只断言方向：避忌宫分数更低
+    assert r["worst_palace"]["score"] < 0
+    assert r["best_palace"]["score"] >= r["worst_palace"]["score"]
+
+
 def test_reference_table_well_formed():
     assert len(USHEN_REFERENCE) >= 15
     for theme, info in USHEN_REFERENCE.items():
