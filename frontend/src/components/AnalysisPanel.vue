@@ -1,9 +1,33 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   title?: string
   analysis: Record<string, any>
   accent?: 'ember' | 'cyber' | 'mystic'
 }>()
+
+/** 用神指引单条：「婚姻：六合 / 乙奇 / 庚 → 六合 现位 3宫 (东)」 */
+const USHEN_RE = /^(.+?)：(.+?) → (.+?) 现位 (\d+)宫 \((.+?)\)$/
+
+function parseUshen(line: string) {
+  const m = USHEN_RE.exec(String(line))
+  if (!m) {
+    return { theme: String(line), tokens: [] as string[], hit: '', palace: '', direction: '' }
+  }
+  return {
+    theme: m[1],
+    tokens: m[2].split('/').map((s) => s.trim()).filter(Boolean),
+    hit: m[3],
+    palace: m[4],
+    direction: m[5],
+  }
+}
+
+const ushenAdvice = computed(() => {
+  const arr = props.analysis?.ushen_advice
+  return Array.isArray(arr) ? arr.map(parseUshen) : []
+})
 
 function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
   const out: { key: string; value: string }[] = []
@@ -23,7 +47,8 @@ function flatten(obj: any, prefix = ''): { key: string; value: string }[] {
   for (const [k, v] of Object.entries(obj)) {
     if (v == null || v === '') continue
     // 奇门格局是结构化数组，已在 QimenPlate 里单独渲染，这里跳过避免压扁成一长串
-    if (prefix === '' && k === 'patterns') continue
+    // 用神指引同上：下面用独立网格逐条渲染
+    if (prefix === '' && (k === 'patterns' || k === 'ushen_advice')) continue
     if (typeof v === 'object' && !Array.isArray(v)) {
       out.push(...flatten(v, k))
     } else {
@@ -107,6 +132,23 @@ const labelMap: Record<string, string> = {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      <div v-if="ushenAdvice.length"
+           class="rounded-lg bg-ink-900/40 border border-ink-600/40 px-3 py-2
+                  md:col-span-2 hover:border-cyber-400/40 transition">
+        <div class="label">用神指引 · {{ ushenAdvice.length }} 项</div>
+        <div class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+          <div v-for="(u, i) in ushenAdvice" :key="i"
+               :title="u.tokens.join(' / ')"
+               class="flex items-baseline justify-between gap-2 rounded-md
+                      bg-ink-900/60 border border-ink-600/30 px-2 py-1">
+            <span class="text-xs text-slate-200 font-kai shrink-0">{{ u.theme }}</span>
+            <span class="text-[11px] text-cyber-300 whitespace-nowrap">
+              {{ u.hit }} · {{ u.palace }}宫 {{ u.direction }}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div v-for="(item, i) in flatten(analysis).filter(x => x.key !== 'summary' && x.value)"
            :key="i"
            class="rounded-lg bg-ink-900/40 border border-ink-600/40
